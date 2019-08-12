@@ -5,28 +5,28 @@ from tensorflow.python.keras.applications.resnet50 import ResNet50
 from tensorflow.python.keras.optimizers import Adam
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 
-# ¸ê®Æ¸ô®|
+# è³‡æ–™è·¯å¾‘
 DATASET_PATH  = 'sample'
 
-# ¼v¹³¤j¤p
+# å½±åƒå¤§å°
 IMAGE_SIZE = (224, 224)
 
-# ¼v¹³Ãş§O¼Æ
+# å½±åƒé¡åˆ¥æ•¸
 NUM_CLASSES = 2
 
-# ­Y GPU °O¾ĞÅé¤£¨¬¡A¥i½Õ­° batch size ©Î­áµ²§ó¦h¼hºô¸ô
+# è‹¥ GPU è¨˜æ†¶é«”ä¸è¶³ï¼Œå¯èª¿é™ batch size æˆ–å‡çµæ›´å¤šå±¤ç¶²è·¯
 BATCH_SIZE = 8
 
-# ­áµ²ºô¸ô¼h¼Æ
+# å‡çµç¶²è·¯å±¤æ•¸
 FREEZE_LAYERS = 2
 
-# Epoch ¼Æ
+# Epoch æ•¸
 NUM_EPOCHS = 20
 
-# ¼Ò«¬¿é¥XÀx¦sªºÀÉ®×
+# æ¨¡å‹è¼¸å‡ºå„²å­˜çš„æª”æ¡ˆ
 WEIGHTS_FINAL = 'model-resnet50-final.h5'
 
-# ³z¹L data augmentation ²£¥Í°V½m»PÅçÃÒ¥Îªº¼v¹³¸ê®Æ
+# é€é data augmentation ç”¢ç”Ÿè¨“ç·´èˆ‡é©—è­‰ç”¨çš„å½±åƒè³‡æ–™
 train_datagen = ImageDataGenerator(rotation_range=40,
                                    width_shift_range=0.2,
                                    height_shift_range=0.2,
@@ -50,43 +50,43 @@ valid_batches = valid_datagen.flow_from_directory(DATASET_PATH + '/valid',
                                                   shuffle=False,
                                                   batch_size=BATCH_SIZE)
 
-# ¿é¥X¦UÃş§Oªº¯Á¤Ş­È
+# è¼¸å‡ºå„é¡åˆ¥çš„ç´¢å¼•å€¼
 for cls, idx in train_batches.class_indices.items():
     print('Class #{} = {}'.format(idx, cls))
 
-# ¥H°V½m¦nªº ResNet50 ¬°°òÂ¦¨Ó«Ø¥ß¼Ò«¬¡A
-# ±Ë±ó ResNet50 ³»¼hªº fully connected layers
+# ä»¥è¨“ç·´å¥½çš„ ResNet50 ç‚ºåŸºç¤ä¾†å»ºç«‹æ¨¡å‹ï¼Œ
+# æ¨æ£„ ResNet50 é ‚å±¤çš„ fully connected layers
 net = ResNet50(include_top=False, weights='imagenet', input_tensor=None,
                input_shape=(IMAGE_SIZE[0],IMAGE_SIZE[1],3))
 x = net.output
 x = Flatten()(x)
 
-# ¼W¥[ DropOut layer
+# å¢åŠ  DropOut layer
 x = Dropout(0.5)(x)
 
-# ¼W¥[ Dense layer¡A¥H softmax ²£¥Í­ÓÃş§Oªº¾÷²v­È
+# å¢åŠ  Dense layerï¼Œä»¥ softmax ç”¢ç”Ÿå€‹é¡åˆ¥çš„æ©Ÿç‡å€¼
 output_layer = Dense(NUM_CLASSES, activation='softmax', name='softmax')(x)
 
-# ³]©w­áµ²»P­n¶i¦æ°V½mªººô¸ô¼h
+# è¨­å®šå‡çµèˆ‡è¦é€²è¡Œè¨“ç·´çš„ç¶²è·¯å±¤
 net_final = Model(inputs=net.input, outputs=output_layer)
 for layer in net_final.layers[:FREEZE_LAYERS]:
     layer.trainable = False
 for layer in net_final.layers[FREEZE_LAYERS:]:
     layer.trainable = True
 
-# ¨Ï¥Î Adam optimizer¡A¥H¸û§Cªº learning rate ¶i¦æ fine-tuning
+# ä½¿ç”¨ Adam optimizerï¼Œä»¥è¼ƒä½çš„ learning rate é€²è¡Œ fine-tuning
 net_final.compile(optimizer=Adam(lr=1e-5),
                   loss='categorical_crossentropy', metrics=['accuracy'])
 
-# ¿é¥X¾ã­Óºô¸ôµ²ºc
+# è¼¸å‡ºæ•´å€‹ç¶²è·¯çµæ§‹
 print(net_final.summary())
 
-# °V½m¼Ò«¬
+# è¨“ç·´æ¨¡å‹
 net_final.fit_generator(train_batches,
                         steps_per_epoch = train_batches.samples // BATCH_SIZE,
                         validation_data = valid_batches,
                         validation_steps = valid_batches.samples // BATCH_SIZE,
                         epochs = NUM_EPOCHS)
 
-# Àx¦s°V½m¦nªº¼Ò«¬
+# å„²å­˜è¨“ç·´å¥½çš„æ¨¡å‹
 net_final.save(WEIGHTS_FINAL)
